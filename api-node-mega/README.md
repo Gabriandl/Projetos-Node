@@ -1,0 +1,1 @@
+Sempre que for subir uma app com puppeteer no heroku usar po seguinte buildpack https://github.com/jontewks/puppeteer-heroku-buildpack

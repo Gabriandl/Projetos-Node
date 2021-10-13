@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Simular</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="https://unpkg.com/sakura.css/css/sakura-ink.css" type="text/css">
+</head>
+
+<body >
+    <section id="simule" data-aos="fade-up">
+        <div class="container simule">
+            <div class="simule-calculo">
+                <p>Informe o valor do veículo que está querendo comprar e descubra por que compensa alugar.</p>
+                <form onsubmit="return false;">
+                    <div class="simule-input">
+                        <label for="dinheiro">R$</label>
+                        <input type="text" id="dinheiro" name="dinheiro"
+                            onkeyup="formataValor(this);habilitaBotao(this);" class="dinheiro form-control"
+                            style="display:inline-block" placeholder="0,00" />
+                    </div>
+                    <input type="button" value="Simule o valor" onclick="main()" id="btnSimule">
+                    <input type="button" value="Ver Todos" onclick="seeAll()" id="btnVerTodos">
+
+                </form>
+            </div>
+            <div id="img-temp" class="img-temp">
+                <img src="https://megaassinatura.com.br/img/carro-destaque-2.png">
+            </div>
+            <div id="result-calculo" class="result-calculo">
+                <h4>Comprando um carro 0km</h4>
+                <div class="result-calculo-block">
+                    <div class="result-calculo-item">
+                        <p>Em 1 ano você perde:</p>
+                        <p id="umAnoPerda"></p>
+                    </div>
+                    <div class="result-calculo-item">
+                        <p>Em 3 ano você perde:</p>
+                        <p id="tresAnosPerda"></p>
+                    </div>
+
+                </div>
+                <div class="ref-tab">
+                    <table width="100%">
+                        <tr>
+                            <td>4% de IPVA</td>
+                            <td id="ipva" class="td-color"></td>
+                        </tr>
+                        <tr>
+                            <td>3% de Seguro</td>
+                            <td id="seguro" class="td-color"></td>
+                        </tr>
+                        <tr>
+                            <td>15% Depreciação 1º Ano</td>
+                            <td id="depreciacao" class="td-color"></td>
+                        </tr>
+                        <tr>
+                            <td>10% Depreciação Demais Anos</td>
+                            <td id="depreciacaoDemaisAnos" class="td-color"></td>
+                        </tr>
+                        <tr>
+                            <td>Manutenção Anual</td>
+                            <td id="manutencao" class="td-color"></td>
+                        </tr>
+                    </table>
+                    <p>A média mensal de gasto em um carro próprio de <span id="carValueOrigin"></span> é de <span
+                            id="carMonthlyInstallment"></span></p>
+                </div>
+                <div id="cars"></div>
+            </div>
+            <div id="carValue"> </div>
+            
+            <div id="boxVerTodos">
+            <div id="filterBox" class="filterBox" ;>
+                <table>
+                    <tr>
+                        <td>Ordenar por:</td>
+                        <td>
+                             
+                            <input type="RADIO" name="btnSort" value="1" class="btnSort" id="btnSortMin" CHECKED>Menor Preço
+                            <input type="RADIO" name="btnSort" value="-1" class="btnSort" id="btnSortMax">Maior Preço
+                            
+
+                        </td>
+                    </tr>
+                    <tr>
+                          
+                        <td><label for="txtPrecoMin">R$</label><input type="text" id="txtPrecoMin" onkeyup="formataValor(this)" placeholder="Preço Minimo">
+                        </td>
+                        <td><label for="txtPrecoMax">R$</label><input type="text" id="txtPrecoMax" onkeyup="formataValor(this)" placeholder="Preço Máximo">
+                        </td>
+                    
+
+                    </tr>
+                    <tr>
+                         
+                        <th colspan="2" >
+                        <div class="btn-categorias">
+   
+
+                          </div>
+                        </th>
+
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td>
+                            <input type="button" value="Aplicar Filtros" onclick="aplicarFiltro()" id="btnAplicar">
+
+                        </td>
+                    </tr> 
+                </table>
+                
+            </div>
+            <div>
+                <p id="carNumber"> </p>
+             </div>
+            <div id="allCars"></div>
+        </div>
+        </div>
+    </section>
+
+
+    <script type="text/javascript">
+                
+        var dinheiroTemp = document.querySelector("#dinheiro");
+        var parcelaMensal = document.querySelector("#carMonthlyInstallment");
+        var valorTotalCarro = document.querySelector("#carValueOrigin");
+        var ipvaValor = document.querySelector("#ipva");
+        var seguro = document.querySelector("#seguro");
+        var depreciacao = document.querySelector("#depreciacao");
+        var depreciacaoDemaisAnos = document.querySelector("#depreciacaoDemaisAnos");
+        var umAnoPerda = document.querySelector("#umAnoPerda");
+        var tresAnosPerda = document.querySelector("#tresAnosPerda");
+        var carsValor = document.querySelector("#cars");
+        var carValor = document.querySelector("#carValue");
+        var btnSimule = document.querySelector("#btnSimule");
+        var simulacaoCompleta = document.querySelector("#result-calculo");
+        var imgTemp = document.querySelector("#img-temp");
+
+        var allCars = document.querySelector("#allCars");
+        var btnAplicar = document.querySelector("#btnAplicar");
+        var btnVerTodos = document.querySelector("#btnVerTodos");
+        var filterBox = document.querySelector("#filterBox"); 
+        var boxPrecoMax = document.querySelector("#txtPrecoMax");
+        var boxPrecoMin = document.querySelector("#txtPrecoMin");
+        var btnSort = document.querySelectorAll(".btnSort");
+        var btnCategorias = document.querySelector(".btn-categorias");
+        var boxVerTodos = document.querySelector("#boxVerTodos");
+        var carNumber = document.querySelector("#carNumber");
+    
+
+
+        boxVerTodos.style.display = 'none';
+        simulacaoCompleta.style.display = 'none';
+        imgTemp.style.display = 'block';
+        btnSimule.disabled = true;
+
+
+    
+        function preencherBtnCategorias(categorias) {
+            var opcoes = '<input type="RADIO" class="categoryOptions" name="categoryOptions" id="show-all" value="seeAll" CHECKED>Ver todos';
+            
+            var n = categorias.length;
+            for (var i = 0; i < n; i++) {
+                var c = categorias[i];
+                opcoes +=
+                    `<input type="RADIO" class="categoryOptions" name="categoryOptions" value="${c.toLocaleLowerCase()}" id="${c.toLocaleLowerCase()}">${c[0]+c.substr(1,c.length).toLocaleLowerCase()}`
+            }
+            btnCategorias.innerHTML = opcoes;
+        }
+
+        async function aplicarFiltro(){
+
+            
+            
+   
+            dinheiroTemp1 = boxPrecoMin.value.replace(".", "");
+            dinheiroTemp2 = dinheiroTemp1.replace(",", ".");
+
+
+            dinheiroTemp3 = boxPrecoMax.value.replace(".", "");
+            dinheiroTemp4 = dinheiroTemp3.replace(",", ".");
+
+            //console.log(boxPrecoMax.value);
+            //console.log(boxPrecoMin.value);
+            
+
+            var categoryOptions = document.querySelectorAll(".categoryOptions");
+
+
+
+
+
+            valorMin = boxPrecoMin.value == '' ? 0 :  parseInt(dinheiroTemp2);
+            valorMax = boxPrecoMax.value == '' ? 20000 :  parseInt(dinheiroTemp4);
+            categoria = Array.from(categoryOptions).map( function(e) { if(e.checked == true) { return e.value; } return false}).find(e => e != false);
+            ordenacao = Array.from(btnSort).map( function(e) { if(e.checked == true) { return e.value; } return false}).find(e => e != false) ;
+
+            const UrlFilters = `https://apimegaassinatura.herokuapp.com/car/getByFilters?categoria=${categoria}&menorParcela=${valorMin}&maiorParcela=${valorMax}&ordem=${ordenacao}`;
+            retorno = await fetch(UrlFilters, {
+                mode: 'cors'
+            });
+
+            let carrosFiltradosTemp = await retorno.json();
+
+            let carrosFiltrados = carrosFiltradosTemp.response;
+
+        
+            console.log(carrosFiltrados)
+            let cardCars='';
+            let countCars = 0;
+
+            if (carrosFiltrados.length == 0){
+                cardCars +=
+                        '<h4>Não encontramos nenhum carro com os filtros especificados!</h4>';
+            }
+
+            for (i = 0; i < carrosFiltrados.length; i++) {
+                if (i == 0) {
+                    cardCars +=
+                        '<h4>Confira carros por assinatura com vantagens no valor mensal e custo zero com burocracia e manutenções:</h4>';
+                }
+
+                if (carrosFiltrados[i].marca != undefined || carrosFiltrados[i].observacoes != undefined){
+                
+                countCars += 1
+                cardCars +=
+
+                    '<div class="card-car" id="' + carrosFiltrados[i].categoria + '" data-compacto="' + carrosFiltrados[i].categoria +'">' +
+                    '<div class="img-car"><img class='+cars[i].empresa.toLocaleLowerCase()+'  src="' + carrosFiltrados[i].img + '" alt="' + carrosFiltrados[i].nome +'" width="100%"></div>' +
+                    '<h5 class="title-car">'+'<span class="brand">' + carrosFiltrados[i].marca + '</span>' +  
+                    '<br>' + carrosFiltrados[i].nome + '<br>' +
+                    '<span class="version">' + carrosFiltrados[i].descricao + '</span></h5>' +
+                    '<div class="text-1"> a partir de </div>' +
+                    '<div class="price">' + carrosFiltrados[i].parcelas + '</div>' +
+                    '<div class="plan">' + carrosFiltrados[i].plano + '</div>' +
+                    '<div class="plan">' + carrosFiltrados[i].franquia + '</div>' +
+                    '<div class="company">' + carrosFiltrados[i].empresa + '</div>' +
+                    '<div class="legal-text">' + carrosFiltrados[i].observacoes + "</div>" +
+                    '<a href="' + carrosFiltrados[i].link + '" class="btn-mobile">Cotar agora</a></div>'
+                }
+            }
+
+            allCars.innerHTML = cardCars;
+            carNumber.innerHTML =   `Foram encontrados ${countCars} carros`
+
+            
+            console.log(valorMin);
+            console.log(valorMax);
+            console.log(categoria);
+            console.log(ordenacao);
+
+            /* 
+            TO DO: MONTAR FETCH ENVIANDO AS VARIAVEIS ACIMA COMO PARAMETRO. getByFilters
+
+            atualizar a getByFilters para conter o ORDENAÇÃO tambem
+
+            SE ATENTAR AO VER TODOS
+            
+            DEPOIS DISSO ADD CAMPOS NA API 
+
+            E ENTÃO FAZER O INNER HTML
+            */ 
+
+        }
+
+
+
+        
+
+
+        async function seeAll() {
+            boxVerTodos.style.display = 'block';
+            simulacaoCompleta.style.display = 'none';
+            imgTemp.style.display = 'none';
+
+            dinheiroTemp.value = '';
+            btnSimule.disabled = true;
+
+
+            const UrlAllCategory = `https://apimegaassinatura.herokuapp.com/car/getCategoryButtons`;
+            response = await fetch(UrlAllCategory, {
+                mode: 'cors'
+            });
+            categorias = await response.json();
+            preencherBtnCategorias(categorias.response)
+
+            const UrlAllCars = `https://apimegaassinatura.herokuapp.com/car`;
+            response = await fetch(UrlAllCars, {
+                mode: 'cors'
+            });
+            retorno = await response.json();
+            cars = retorno.response;
+            console.log(cars)
+            var cardCars='';
+            let countCars = 0;
+            for (i = 0; i < cars.length; i++) {
+                if (i == 0) {
+                    cardCars +=
+                        '<h4>Confira carros por assinatura com vantagens no valor mensal e custo zero com burocracia e manutenções:</h4>';
+                }
+
+                if (cars[i].marca != undefined || cars[i].observacoes != undefined){
+                
+                countCars += 1
+                cardCars +=
+
+                    '<div class="card-car" id="' + cars[i].categoria + '" data-compacto="' + cars[i].categoria +'">' +
+                    '<div class="img-car"><img class='+cars[i].empresa.toLocaleLowerCase()+' src="' + cars[i].img + '" alt="' + cars[i].nome +'" width="100%"></div>' +
+                    '<h5 class="title-car">'+'<span class="brand">' + cars[i].marca + '</span>' +  
+                    '<br>' + cars[i].nome + '<br>' +
+                    '<span class="version">' + cars[i].descricao + '</span></h5>' +
+                    '<div class="text-1"> a partir de </div>' +
+                    '<div class="price">' + cars[i].parcelas + '</div>' +
+                    '<div class="plan">' + cars[i].plano + '</div>' +
+                    '<div class="plan">' + cars[i].franquia + '</div>' +
+                    '<div class="company">' + cars[i].empresa + '</div>' +
+                    '<div class="legal-text">' + cars[i].observacoes + "</div>" +
+                    '<a href="' + cars[i].link + '" class="btn-mobile">Cotar agora</a></div>'
+                    }
+            }
+
+            allCars.innerHTML = cardCars;
+            carNumber.innerHTML =   `Foram encontrados ${countCars} carros`
+
+        }
+
+        function habilitaBotao(campo) {
+            if (campo.value != '') {
+                btnSimule.disabled = false;
+            } else {
+                btnSimule.disabled = true;
+            }
+        }
+
+        function formataValor(campo) {
+            campo.value = filtraCampoValor(campo);
+            vr = campo.value;
+            tam = vr.length;
+
+            if (tam <= 2) {
+                campo.value = vr;
+            }
+            if ((tam > 2) && (tam <= 5)) {
+                campo.value = vr.substr(0, tam - 2) + ',' + vr.substr(tam - 2, tam);
+            }
+            if ((tam >= 6) && (tam <= 8)) {
+                campo.value = vr.substr(0, tam - 5) + '.' + vr.substr(tam - 5, 3) + ',' + vr.substr(tam - 2, tam);
+            }
+            if ((tam >= 9) && (tam <= 11)) {
+                campo.value = vr.substr(0, tam - 8) + '.' + vr.substr(tam - 8, 3) + '.' + vr.substr(tam - 5, 3) + ',' +
+                    vr.substr(tam - 2, tam);
+            }
+            if ((tam >= 12) && (tam <= 14)) {
+                campo.value = vr.substr(0, tam - 11) + '.' + vr.substr(tam - 11, 3) + '.' + vr.substr(tam - 8, 3) +
+                    '.' + vr.substr(tam - 5, 3) + ',' + vr.substr(tam - 2, tam);
+            }
+            if ((tam >= 15) && (tam <= 18)) {
+                campo.value = vr.substr(0, tam - 14) + '.' + vr.substr(tam - 14, 3) + '.' + vr.substr(tam - 11, 3) +
+                    '.' + vr.substr(tam - 8, 3) + '.' + vr.substr(tam - 5, 3) + ',' + vr.substr(tam - 2, tam);
+            }
+
+        }
+
+        function filtraCampoValor(campo) {
+            var s = "";
+            var cp = "";
+            vr = campo.value;
+            tam = vr.length;
+            for (i = 0; i < tam; i++) {
+                if (vr.substring(i, i + 1) >= "0" && vr.substring(i, i + 1) <= "9") {
+                    s = s + vr.substring(i, i + 1);
+                }
+            }
+            campo.value = s;
+            return cp = campo.value
+        }
+
+
+        async function main() {
+            dinheiroTemp1 = dinheiroTemp.value.replace(".", "");
+            dinheiroTemp2 = dinheiroTemp1.replace(",", ".");
+            dinheiro = parseInt(dinheiroTemp2);
+            console.log(dinheiro);
+            simulacaoCompleta.style.display = 'block'
+            imgTemp.style.display = 'none'
+            boxVerTodos.style.display = 'none';
+
+            //simulacaoCompleta.innerHTML = '<h4>Comprando um carro 0km</h4> <div class="result-calculo-block"> <div class="result-calculo-item"> <p>Em 1 ano você perde:</p> <p id="umAnoPerda"></p> </div> <div class="result-calculo-item"> <p>Em 3 ano você perde:</p> <p id="tresAnosPerda"></p> </div> </div> <div class="ref-tab"> <table width="100%"> <tr> <td>4% de IPVA</td> <td id="ipva" class="td-color"></td> </tr> <tr> <td>3% de Seguro</td> <td id="seguro" class="td-color"></td> </tr> <tr> <td>15% Depreciação 1º Ano</td> <td id="depreciacao" class="td-color"></td> </tr> <tr> <td>10% Depreciação Demais Anos</td> <td id="depreciacaoDemaisAnos" class="td-color"></td> </tr> <tr> <td>Manutenção Anual</td> <td id="manutencao" class="td-color"></td> </tr> </table>'
+
+            try {
+                var carValue = dinheiro;
+                var carValueOrigin = dinheiro;
+
+                // Depreciação, IPVA, Seguro, Manutenção, Documentação (1º ano apenas)
+                let depreciation = 0.15;
+                let ipva = 0.04;
+                let insurance = 0.03;
+                let maintenance = 800;
+                let documents = 150;
+                let yearExpense = 0; // despesa no ano
+                let totalExpenses = 0; // Soma das despesas ao longo dos anos
+                let buyInCash = true;
+                let expenses = {
+                    ipva: 0,
+                    insurance: 0,
+                    depreciationFirstYear: 0,
+                    depreciationOtherYears: 0,
+                    maintenance: 0,
+                };
+                let oneYearLoss = null;
+                let threeYearsLoss = null;
+                let threeYearsValue = 0;
+                let threeYearsMonthly = 0;
+
+                expenses.ipva = carValue * ipva;
+                expenses.insurance = carValue * insurance;
+                expenses.depreciationFirstYear = carValue * depreciation;
+                expenses.depreciationOtherYears = carValue * 0.1;
+                expenses.maintenance = maintenance;
+
+                threeYearsValue = carValueOrigin + (expenses.ipva * 3) + (expenses.insurance * 3) + (expenses
+                    .maintenance * 3);
+
+                threeYearsMonthly = threeYearsValue / 36;
+
+                for (let i = 1; i < 4; i++) {
+                    if (i === 1) {
+                        yearExpense += documents;
+                    } else {
+                        depreciation = 0.1;
+                    }
+                    yearExpense +=
+                        carValue * depreciation +
+                        carValue * ipva +
+                        carValue * insurance +
+                        maintenance;
+
+                    totalExpenses += yearExpense;
+                    //console.log("Ano ", i, " despesa de R$", yearExpense);
+                    carValue -= carValue * depreciation;
+                    yearExpense = 0;
+                    if (i === 1) {
+                        oneYearLoss = totalExpenses;
+                    }
+                }
+                threeYearsLoss = totalExpenses;
+                console.log("Despesa total: R$", totalExpenses);
+                const URL = `https://apimegaassinatura.herokuapp.com/car/getBySimulationResult?parcela=${threeYearsMonthly}`;
+                response = await fetch(URL, {
+                    mode: 'cors'
+                });
+                carsTemp =  await response.json();
+                cars = carsTemp.response;
+
+                //console.log(cars[0].nome +" ----- "+cars[0].nome +" ----- "+cars.length)
+                /* cars = await Promise.all([carros,
+                     timeout(2500)
+                 ]);*/
+                simulacao = {
+                    // showBtnGoTop: false,
+                    threeYearsValue: threeYearsValue,
+                    threeYearsMonthly: threeYearsMonthly,
+                    buyInCash: buyInCash,
+                    expenses: expenses,
+                    oneYearLoss: oneYearLoss,
+                    threeYearsLoss: threeYearsLoss,
+                    carValue: carValueOrigin.toLocaleString('pt-br', {
+                        style: 'currency',
+                        currency: 'BRL'
+                    }),
+                    cars: cars
+                }
+
+
+                simulacao.threeYearsValue = simulacao.threeYearsValue.toLocaleString('pt-br', {
+                    style: 'currency',
+                    currency: 'BRL'
+                });
+
+                simulacao.threeYearsMonthly = simulacao.threeYearsMonthly.toLocaleString('pt-br', {
+                    style: 'currency',
+                    currency: 'BRL'
+                });
+
+                simulacao.expenses.depreciationFirstYear = simulacao.expenses.depreciationFirstYear.toLocaleString(
+                    'pt-br', {
+                        style: 'currency',
+                        currency: 'BRL'
+                    });
+
+
+                simulacao.expenses.depreciationOtherYears = simulacao.expenses.depreciationOtherYears
+                    .toLocaleString('pt-br', {
+                        style: 'currency',
+                        currency: 'BRL'
+                    });
+
+
+                simulacao.expenses.insurance = simulacao.expenses.insurance.toLocaleString('pt-br', {
+                    style: 'currency',
+                    currency: 'BRL'
+                });
+
+
+                simulacao.expenses.ipva = simulacao.expenses.ipva.toLocaleString('pt-br', {
+                    style: 'currency',
+                    currency: 'BRL'
+                });
+
+
+                simulacao.expenses.maintenance = simulacao.expenses.maintenance.toLocaleString('pt-br', {
+                    style: 'currency',
+                    currency: 'BRL'
+                });
+
+
+                simulacao.oneYearLoss = simulacao.oneYearLoss.toLocaleString('pt-br', {
+                    style: 'currency',
+                    currency: 'BRL'
+                });
+
+
+                simulacao.threeYearsLoss = simulacao.threeYearsLoss.toLocaleString('pt-br', {
+                    style: 'currency',
+                    currency: 'BRL'
+                });
+                let cardCars;
+                if (cars.length == 0) {
+                    cardCars = 'Não possui nenhum carro com o valor digitado!';
+                } else if (cars.length > 0) {
+                    cardCars = '';
+                }
+
+                for (i = 0; i < cars.length; i++) {
+                    if (i == 0) {
+                        cardCars +=
+                            '<h4>Confira carros por assinatura com vantagens no valor mensal e custo zero com burocracia e manutenções:</h4>';
+                    }
+
+                    if (cars[i].marca != undefined || cars[i].observacoes != undefined){
+
+                    cardCars +=
+
+                        '<div class="card-car" id="' + cars[i].categoria + '" data-compacto="' + cars[i].categoria +
+                        '">' +
+                        '<div class="img-car"><img class='+cars[i].empresa.toLocaleLowerCase()+' src="' + cars[i].img + '" alt="' + cars[i].nome +
+                        '" width="100%"></div>' +
+                        '<h5 class="title-car"><span class="brand">' + cars[i].marca + '</span>' +
+                        '<br>' + cars[i].nome + '<br>' +
+                        '<span class="version">' + cars[i].descricao + '</span></h5>' +
+                        '<div class="text-1"> a partir de </div>' +
+                        '<div class="price">' + cars[i].parcelas + '</div>' +
+                        '<div class="plan">' + cars[i].plano + '</div>' +
+                        '<div class="plan">' + cars[i].franquia + '</div>' +
+                        '<div class="company">' + cars[i].empresa + '</div>' +
+                    '<div class="legal-text">' + cars[i].observacoes + "</div>" +
+                        '<a href="' + cars[i].link + '" class="btn-mobile">Cotar agora</a></div>'
+                    }
+                }
+                //  console.log(simulacao.threeYearsMonthly +"------"+simulacao.threeYearsValue )
+                ipvaValor.innerHTML = simulacao.expenses.ipva;
+                seguro.innerHTML = simulacao.expenses.insurance;
+                depreciacao.innerHTML = simulacao.expenses.depreciationFirstYear;
+                depreciacaoDemaisAnos.innerHTML = simulacao.expenses.depreciationOtherYears;
+                umAnoPerda.innerHTML = simulacao.oneYearLoss;
+                manutencao.innerHTML = simulacao.expenses.maintenance;
+                tresAnosPerda.innerHTML = simulacao.threeYearsLoss;
+                parcelaMensal.innerHTML = simulacao.threeYearsMonthly;
+                valorTotalCarro.innerHTML = simulacao.carValue;
+
+                dinheiroTemp.value = '';
+                btnSimule.disabled = true;
+
+                carsValor.innerHTML = cardCars;
+                carValor.inneHTML = simulacao.carValue;
+
+
+                console.log(simulacao);
+
+
+            } catch (e) {
+                console.log(e)
+            }
+        }
+    </script>
+
+
+</body>
+
+</html>
